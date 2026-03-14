@@ -1,0 +1,50 @@
+Sheets found: ['DASHBOARD', 'PIX_LANCAMENTOS', 'CARTAO_CREDITO', 'PAGAMENTOS_DIVIDAS', 'CONTRATOS_INVESTIMENTO', 'CONFIG']
+
+--- Sheet: DASHBOARD ---
+Columns: ['DASHBOARD EXECUTIVO (PF / PJ / CONSOLIDADO)', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 13', 'Unnamed: 14', 'Unnamed: 15', 'Unnamed: 16', 'Unnamed: 17', 'Unnamed: 18']
+First 3 rows:
+  DASHBOARD EXECUTIVO (PF / PJ / CONSOLIDADO) Unnamed: 1 Unnamed: 2 Unnamed: 3 Unnamed: 4 Unnamed: 5 Unnamed: 6 Unnamed: 7 Unnamed: 8 Unnamed: 9 Unnamed: 10 Unnamed: 11  Unnamed: 12 Unnamed: 13 Unnamed: 14 Unnamed: 15  Unnamed: 16 Unnamed: 17 Unnamed: 18
+0                                         NaN        NaN        NaN        NaN        NaN        NaN        NaN        NaN        NaN        NaN         NaN         NaN          NaN         NaN         NaN         NaN          NaN         NaN         NaN
+1                                        Ano:       2026        NaN        NaN        NaN        NaN        NaN        NaN        NaN        NaN         NaN         NaN          NaN         NaN         NaN         NaN          NaN         NaN         NaN
+2                                         NaN        NaN        NaN        NaN        NaN        NaN        NaN        NaN        NaN        NaN         NaN         NaN          NaN         NaN         NaN         NaN          NaN         NaN         NaN
+
+--- Sheet: PIX_LANCAMENTOS ---
+Columns: ['ITEM', 'DATA', 'TIPO', 'PRODUTO/SERVIÇO', 'BANCO', 'CONTA', 'VALOR', 'ANO', 'MÊS', 'Unnamed: 9', 'Unnamed: 10', 'Unnamed: 11', 'Unnamed: 12', 'Unnamed: 13', 'Unnamed: 14', 'Unnamed: 15', 'Unnamed: 16', 'Unnamed: 17', 'Unnamed: 18', 'Unnamed: 19', 'Unnamed: 20', 'Unnamed: 21', 'Unnamed: 22', 'Unnamed: 23', 'Unnamed: 24', 'Unnamed: 25']
+First 3 rows:
+  ITEM DATA TIPO PRODUTO/SERVIÇO BANCO               CONTA  VALOR  ANO  MÊS  Unnamed: 9  Unnamed: 10  Unnamed: 11  Unnamed: 12  Unnamed: 13  Unnamed: 14  Unnamed: 15  Unnamed: 16  Unnamed: 17  Unnamed: 18  Unnamed: 19  Unnamed: 20  Unnamed: 21  Unnamed: 22  Unnamed: 23  Unnamed: 24 Unnamed: 25
+0  NaN  NaT  NaN             NaN   PIX  Conta Principal PF    NaN  NaN  NaN         NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN         NaN
+1  NaN  NaT  NaN             NaN   PIX  Conta Principal PF    NaN  NaN  NaN         NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN         NaN
+2  NaN  NaT  NaN             NaN   PIX  Conta Principal PF    NaN  NaN  NaN         NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN          NaN         NaN
+
+--- Sheet: CARTAO_CREDITO ---
+Columns: ['DATA', 'ORIGEM', 'CARTÃO', 'TIPO', 'PRODUTO/SERVIÇO', 'CATEGORIA', 'PARCELAS', 'VALOR', 'PARC_ATUAL', 'PARC_TOTAL', 'RESTANTES', 'VALOR_RESTANTE', 'PROX_VENC', 'ANO', 'MES']
+First 3 rows:
+  DATA ORIGEM CARTÃO TIPO PRODUTO/SERVIÇO CATEGORIA PARCELAS  VALOR  PARC_ATUAL  PARC_TOTAL  RESTANTES  VALOR_RESTANTE PROX_VENC  ANO  MES
+0  NaT    NaN    NaN  NaN             NaN       NaN      NaN    NaN         NaN         NaN        0.0             NaN       NaT  NaN  NaN
+1  NaT    NaN    NaN  NaN             NaN       NaN      NaN    NaN         NaN         NaN        0.0             NaN       NaT  NaN  NaN
+2  NaT    NaN    NaN  NaN             NaN       NaN      NaN    NaN         NaN         NaN        0.0             NaN       NaT  NaN  NaN
+
+--- Sheet: PAGAMENTOS_DIVIDAS ---
+Columns: ['DATA', 'MÊS', 'CREDOR', 'VALOR', 'ORIGEM', 'CONTA/MEIO', 'OBS']
+First 3 rows:
+        DATA  MÊS   CREDOR  VALOR ORIGEM  CONTA/MEIO                      OBS
+0 2025-12-18   12  EMPRESA    400     PF         NaN                      NaN
+1 2026-01-05    1  EMPRESA   1500     PJ         NaN        investimento luiz
+2 2026-01-16    1  EMPRESA    300     PJ         NaN  ultimo pagamento esdras
+
+--- Sheet: CONTRATOS_INVESTIMENTO ---
+Columns: ['INVESTIDOR', 'ORIGEM', 'VALOR RECEBIDO', 'VALOR A DEVOLVER', 'DATA INÍCIO', 'DATA FINAL', 'STATUS', 'OBS']
+First 3 rows:
+  INVESTIDOR              ORIGEM  VALOR RECEBIDO  VALOR A DEVOLVER DATA INÍCIO DATA FINAL STATUS                                                                      OBS
+0       Luiz  Conta Principal PF         2000.00           2180.00  2025-10-30 2026-04-30  Ativo                                                                      NaN
+1       Luiz  Conta Principal PJ         2500.00           1525.00  2026-01-05 2026-07-05  Ativo  valor a devolver menor por conta do desconto de 12 meses de acesssória 
+2    Isabela  Conta Principal PJ        25073.85          26202.18  2026-01-25 2026-04-25  Ativo                                                                      NaN
+
+--- Sheet: CONFIG ---
+Columns: ['Categorias', 'Itens', 'Tipos (Receita/Despesa)', 'Formas de Pagamento', 'Origem (PF/PJ)', 'Contas PF', 'Contas PJ', 'Cartões', 'Tipos de Dívida', 'Credores', 'Investidores', 'Liquidez (Alta/Média/Baixa)', 'Status (Ativo/Quitado)']
+First 3 rows:
+     Categorias           Itens Tipos (Receita/Despesa) Formas de Pagamento Origem (PF/PJ)            Contas PF           Contas PJ     Cartões Tipos de Dívida Credores Investidores Liquidez (Alta/Média/Baixa) Status (Ativo/Quitado)
+0       Mercado  Ex.: ClaroFlex                 RECEITA                 PIX             PF   Conta Principal PF  Conta Principal PJ      Nubank      Empréstimo       XP      Isabela                        Alta                  Ativo
+1        Contas            Uber                 DESPESA              CARTÃO             PJ  Conta Secundária PF   Conta Impostos PJ  Nu Empresa          Cartão   Sicoob         Luiz                       Média                Quitado
+2  Investimento          Amazon                     NaN              BOLETO            NaN                  NaN                 NaN      PicPay        Contrato     Will      Antonio                       Baixa                    NaN
+

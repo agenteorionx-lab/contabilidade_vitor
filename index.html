@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Contábil Executivo</title>
+
+    <!-- Redirecionamento Removido para permitir visualização estática -->
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- BoxIcons (Ícones) -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
+    <!-- CSS Customizado -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body class="dark-theme">
+
+    <!-- Menu Lateral -->
+    <nav class="sidebar">
+        <div class="logo-details">
+            <i class='bx bx-trending-up icon'></i>
+            <div class="logo_name">Financeiro<span class="text-accent">Pro</span></div>
+        </div>
+        <ul class="nav-links">
+            <li>
+                <a href="#" data-target="dashboard" class="active">
+                    <i class='bx bx-grid-alt'></i>
+                    <span class="link_name">Dashboard Executivo</span>
+                </a>
+                <ul class="sub-menu blank">
+                    <li><a class="link_name" href="#">Dashboard Executivo</a></li>
+                </ul>
+            </li>
+            <li>
+                <a href="#" data-target="pix">
+                    <i class='bx bx-transfer'></i>
+                    <span class="link_name">Pix / Lançamentos</span>
+                </a>
+                <ul class="sub-menu blank">
+                    <li><a class="link_name" href="#">Pix / Lançamentos</a></li>
+                </ul>
+            </li>
+            <li>
+                <a href="#" data-target="cartao">
+                    <i class='bx bx-credit-card'></i>
+                    <span class="link_name">Cartão de Crédito</span>
+                </a>
+                <ul class="sub-menu blank">
+                    <li><a class="link_name" href="#">Cartão de Crédito</a></li>
+                </ul>
+            </li>
+            <li>
+                <a href="#" data-target="dividas">
+                    <i class='bx bx-money-withdraw'></i>
+                    <span class="link_name">Pagamentos / Dívidas</span>
+                </a>
+                <ul class="sub-menu blank">
+                    <li><a class="link_name" href="#">Pagamentos / Dívidas</a></li>
+                </ul>
+            </li>
+            <li>
+                <a href="#" data-target="investimentos">
+                    <i class='bx bx-line-chart'></i>
+                    <span class="link_name">Contratos Investimento</span>
+                </a>
+                <ul class="sub-menu blank">
+                    <li><a class="link_name" href="#">Contratos Investimento</a></li>
+                </ul>
+            </li>
+            <li>
+                <a href="#" data-target="config">
+                    <i class='bx bx-cog'></i>
+                    <span class="link_name">Configurações</span>
+                </a>
+                <ul class="sub-menu blank">
+                    <li><a class="link_name" href="#">Configurações</a></li>
+                </ul>
+            </li>
+
+            <li class="profile-details">
+                <div class="profile-content">
+                    <i class='bx bx-user-circle'></i>
+                </div>
+                <div class="name-job">
+                    <div class="profile_name">Vitor</div>
+                    <div class="job">Administrador</div>
+                </div>
+                <i class='bx bx-log-out'></i>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Área Principal -->
+    <section class="home-section">
+        <div class="home-content">
+            <i class='bx bx-menu'></i>
+            <span class="text" id="page-title">Dashboard Executivo</span>
+        </div>
+
+        <div class="main-container">
+            <!-- As telas serão injetadas/mostradas aqui baseadas no menu selecionado -->
+
+            <div id="view-dashboard" class="view-section active">
+                <div class="cards-overview">
+                    <div class="card glass-effect border-green card-metric">
+                        <div class="card-info">
+                            <h3>Receitas Mês</h3>
+                            <h2 id="metric-receita" class="text-green">R$ 0,00</h2>
+                        </div>
+                        <div class="card-icon text-green"><i class='bx bx-up-arrow-circle'></i></div>
+                    </div>
+                    <div class="card glass-effect border-red card-metric">
+                        <div class="card-info">
+                            <h3>Despesas Mês</h3>
+                            <h2 id="metric-despesa" class="text-red">R$ 0,00</h2>
+                        </div>
+                        <div class="card-icon text-red"><i class='bx bx-down-arrow-circle'></i></div>
+                    </div>
+                    <div class="card glass-effect border-purple card-metric">
+                        <div class="card-info">
+                            <h3>Total Investido</h3>
+                            <h2 id="metric-investido" class="text-purple">R$ 0,00</h2>
+                        </div>
+                        <div class="card-icon text-purple"><i class='bx bx-wallet'></i></div>
+                    </div>
+                    <div class="card glass-effect border-blue card-metric">
+                        <div class="card-info">
+                            <h3>Saldo Geral</h3>
+                            <h2 id="metric-saldo" class="text-blue">R$ 0,00</h2>
+                        </div>
+                        <div class="card-icon text-blue"><i class='bx bx-coin-stack'></i></div>
+                    </div>
+                </div>
+
+                <div class="charts-container">
+                    <div class="chart-box glass-effect">
+                        <h3>Fluxo de Caixa Mensal</h3>
+                        <canvas id="cashflowChart"></canvas>
+                    </div>
+                    <div class="chart-box glass-effect">
+                        <h3>Despesas por Categoria</h3>
+                        <canvas id="expensesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-pix" class="view-section" style="display: none;">
+                <div class="header-action glass-effect">
+                    <h2>Lançamentos (PIX e Outros)</h2>
+                    <button class="btn btn-primary" onclick="app.openModal('modalPix')"><i class='bx bx-plus'></i> Novo
+                        Lançamento</button>
+                </div>
+                <!-- Table pix -->
+                <div class="table-container glass-effect">
+                    <table id="table-pix" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Tipo</th>
+                                <th>Produto/Serviço</th>
+                                <th>Banco/Conta</th>
+                                <th>Origem</th>
+                                <th>Valor</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Preenchido via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="view-cartao" class="view-section" style="display: none;">
+                <h2 class="section-title">Faturas e Cartões de Crédito</h2>
+                <p>Módulo de cartões em desenvolvimento.</p>
+            </div>
+
+            <div id="view-dividas" class="view-section" style="display: none;">
+                <h2 class="section-title">Pagamentos e Dívidas</h2>
+                <p>Módulo de dívidas em desenvolvimento.</p>
+            </div>
+
+            <div id="view-investimentos" class="view-section" style="display: none;">
+                <h2 class="section-title">Contratos de Investimento</h2>
+                <p>Módulo de investimentos em desenvolvimento.</p>
+            </div>
+
+            <div id="view-config" class="view-section" style="display: none;">
+                <h2 class="section-title">Configurações do Sistema</h2>
+                <div class="config-grid">
+                    <div class="glass-effect config-card">
+                        <h3>Categorias</h3>
+                        <ul id="list-categories" class="config-list"></ul>
+                        <button class="btn btn-sm btn-outline"><i class='bx bx-plus'></i> Add</button>
+                    </div>
+                    <div class="glass-effect config-card">
+                        <h3>Contas PF</h3>
+                        <ul id="list-contas-pf" class="config-list"></ul>
+                        <button class="btn btn-sm btn-outline"><i class='bx bx-plus'></i> Add</button>
+                    </div>
+                    <div class="glass-effect config-card">
+                        <h3>Contas PJ</h3>
+                        <ul id="list-contas-pj" class="config-list"></ul>
+                        <button class="btn btn-sm btn-outline"><i class='bx bx-plus'></i> Add</button>
+                    </div>
+                    <div class="glass-effect config-card">
+                        <h3>Cartões</h3>
+                        <ul id="list-cartoes" class="config-list"></ul>
+                        <button class="btn btn-sm btn-outline"><i class='bx bx-plus'></i> Add</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Modais -->
+    <div id="modalPix" class="modal">
+        <div class="modal-content glass-effect">
+            <span class="close" onclick="app.closeModal('modalPix')">&times;</span>
+            <h2>Novo Lançamento</h2>
+            <form id="formPix" onsubmit="app.savePix(event)">
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label>Data</label>
+                        <input type="date" id="pixData" required>
+                    </div>
+                    <div class="form-group half">
+                        <label>Tipo (Receita/Despesa)</label>
+                        <select id="pixTipo" required>
+                            <option value="RECEITA">Receita</option>
+                            <option value="DESPESA">Despesa</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Produto/Serviço / Descrição</label>
+                    <input type="text" id="pixDesc" required placeholder="Ex: Pagamento Fornecedor">
+                </div>
+                <div class="form-row">
+                    <div class="form-group third">
+                        <label>Banco/Conta</label>
+                        <select id="pixConta" required></select>
+                    </div>
+                    <div class="form-group third">
+                        <label>Origem</label>
+                        <select id="pixOrigem" required>
+                            <option value="PF">PF</option>
+                            <option value="PJ">PJ</option>
+                        </select>
+                    </div>
+                    <div class="form-group third">
+                        <label>Valor (R$)</label>
+                        <input type="number" id="pixValor" step="0.01" required>
+                    </div>
+                </div>
+                <div class="form-footer">
+                    <button type="submit" class="btn btn-primary">Salvar Lançamento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>
