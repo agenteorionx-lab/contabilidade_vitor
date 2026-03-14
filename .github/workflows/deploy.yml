@@ -19,12 +19,12 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install dependencies
-        run: npm install
-        working-directory: frontend
-
       - name: Build project
-        run: npm run build
+        run: |
+          npm install
+          npm run build
+          # Copiar o nginx.conf para dentro da pasta dist para facilitar o envio
+          cp ../nginx.conf ./dist/
         working-directory: frontend
         env:
           VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
@@ -37,7 +37,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
-          source: "frontend/dist/*,nginx.conf"
+          source: "frontend/dist/*"
           target: "/var/www/contabilidade"
           strip_components: 2
 
@@ -55,24 +55,22 @@ jobs:
             fi
 
             # Mover arquivos para o lugar certo
-            # scp-action coloca em /var/www/contabilidade/nginx.conf
-            mv /var/www/contabilidade/nginx.conf /etc/nginx/sites-available/contabilidade
+            # Agora o nginx.conf está na raiz de /var/www/contabilidade/
+            if [ -f /var/www/contabilidade/nginx.conf ]; then
+              mv /var/www/contabilidade/nginx.conf /etc/nginx/sites-available/contabilidade
+            fi
 
-            # Criar pasta /var/www/contabilidade/dist se não existir (para o root do nginx.conf)
-            mkdir -p /var/www/contabilidade/dist
-            # Mover o conteúdo para dentro de dist para bater com o nginx.conf antigo ou ajustar nginx.conf
-            # Para simplificar, vamos garantir que o nginx.conf aponte para /var/www/contabilidade
-            sed -i 's|root /var/www/contabilidade/dist;|root /var/www/contabilidade/frontend/dist;|g' /etc/nginx/sites-available/contabilidade
-            # Na verdade, scp enviou frontend/dist/* para /var/www/contabilidade/
-            # Então os arquivos estão direto em /var/www/contabilidade/
-            sed -i 's|root /var/www/contabilidade/dist;|root /var/www/contabilidade;|g' /etc/nginx/sites-available/contabilidade
+            # Garantir que o nginx.conf aponte para a pasta certa (/var/www/contabilidade)
+            if [ -f /etc/nginx/sites-available/contabilidade ]; then
+              sed -i 's|root /var/www/contabilidade/dist;|root /var/www/contabilidade;|g' /etc/nginx/sites-available/contabilidade
+              
+              # Ativar configuração
+              rm -f /etc/nginx/sites-enabled/default
+              ln -sf /etc/nginx/sites-available/contabilidade /etc/nginx/sites-enabled/
+            fi
 
-            # Resetar Nginx
-            rm -f /etc/nginx/sites-enabled/default
-            ln -sf /etc/nginx/sites-available/contabilidade /etc/nginx/sites-enabled/
-            
-            # Derrubar apache se existir
+            # Derrubar apache se existir para liberar a porta 80
             systemctl stop apache2 2>/dev/null || true
             
-            # Reiniciar Nginx
-            systemctl restart nginx
+            # Verificar configuração e reiniciar
+            nginx -t && systemctl restart nginx
