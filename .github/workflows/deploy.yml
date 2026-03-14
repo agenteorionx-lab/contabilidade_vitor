@@ -81,6 +81,13 @@ jobs:
             systemctl stop apache2 2>/dev/null || true
             if command -v fuser > /dev/null; then fuser -k 80/tcp 2>/dev/null || true; fi
             
+            # Abrir firewall (UFW)
+            if command -v ufw > /dev/null; then
+              ufw allow 80/tcp
+              ufw allow 443/tcp
+              ufw --force enable
+            fi
+            
             # Permissões
             chown -R www-data:www-data /var/www/contabilidade
             chmod -R 755 /var/www/contabilidade
