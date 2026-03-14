@@ -69,8 +69,14 @@ jobs:
               ln -sf /etc/nginx/sites-available/contabilidade /etc/nginx/sites-enabled/
             fi
 
-            # Derrubar apache se existir para liberar a porta 80
+            # Derrubar apache e nginx para garantir que a porta 80 está livre
             systemctl stop apache2 2>/dev/null || true
+            systemctl stop nginx 2>/dev/null || true
+            fuser -k 80/tcp 2>/dev/null || true
             
-            # Verificar configuração e reiniciar
-            nginx -t && systemctl restart nginx
+            # Verificar se a configuração está ok e iniciar
+            nginx -t && systemctl start nginx
+            
+            # Ajustar permissões finais
+            chown -R www-data:www-data /var/www/contabilidade
+            chmod -R 755 /var/www/contabilidade
