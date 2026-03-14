@@ -95,12 +95,17 @@ jobs:
             # Reiniciar
             systemctl restart nginx
             
-            # --- DIAGNÓSTICO ---
-            echo "--- ESTRUTURA DE PASTAS (Final) ---"
+            # --- DIAGNÓSTICO (Final) ---
+            echo "--- SITES ATIVOS ---"
+            ls -la /etc/nginx/sites-enabled/
+            echo "--- ESTRUTURA DE PASTAS ---"
             ls -la /var/www/contabilidade
-            echo "--- O QUE ESTÁ RODANDO NAS PORTAS 80 e 443 ---"
+            echo "--- PORTAS (SS) ---"
             ss -tulpn | grep -E ':80|:443' || true
-            echo "--- TESTE DE ACESSO LOCAL ---"
-            curl -I http://localhost
-            echo "--- TESTE DE CONTEÚDO (Primeiras 5 linhas) ---"
-            head -n 5 /var/www/contabilidade/index.html
+            echo "--- TESTE LOCAL IP EXTERNO ---"
+            curl -I http://147.93.179.208 || true
+            echo "--- ÚLTIMAS LINHAS DO ERRO ---"
+            tail -n 20 /var/log/nginx/debug_contabilidade.log || true
+            echo "--- CHECANDO FIREWALL ---"
+            ufw status || true
+            iptables -L -n | grep :80 || true
