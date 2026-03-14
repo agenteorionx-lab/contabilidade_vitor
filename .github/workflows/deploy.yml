@@ -39,7 +39,8 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           source: "frontend/dist/*"
           target: "/var/www/contabilidade"
-          strip_components: 2 # Isso faz os arquivos do dist irem direto para /var/www/contabilidade/
+          strip_components: 2
+          rm: true # LIMPA A PASTA ANTES DE ENVIAR
 
       - name: Configure Nginx and Restart
         uses: appleboy/ssh-action@master
@@ -54,7 +55,7 @@ jobs:
               apt-get install -y nginx
             fi
 
-            # Criar arquivo de config direto com caminhos absolutos e debug log
+            # Criar arquivo de config direto
             cat << 'EOF' > /etc/nginx/sites-available/contabilidade
             server {
                 listen 80 default_server;
@@ -72,21 +73,15 @@ jobs:
             }
             EOF
 
-            # Garantir que a pasta existe e tem permissão
-            mkdir -p /var/www/contabilidade
-            
-            # Limpar lixo de deploys anteriores (apenas se for lixo conhecido)
-            # A gente sabe que scp-action joga os arquivos na raiz de target se strip_components for usado certo
-            
-            # Resetar Nginx vinculando a config
+            # Ativar config
             rm -f /etc/nginx/sites-enabled/default
             ln -sf /etc/nginx/sites-available/contabilidade /etc/nginx/sites-enabled/
             
-            # Matar processos que roubam a porta 80
+            # Matar processos que roubam porta 80
             systemctl stop apache2 2>/dev/null || true
-            fuser -k 80/tcp 2>/dev/null || true
+            if command -v fuser > /dev/null; then fuser -k 80/tcp 2>/dev/null || true; fi
             
-            # Aplicar permissões
+            # Permissões
             chown -R www-data:www-data /var/www/contabilidade
             chmod -R 755 /var/www/contabilidade
             
@@ -94,9 +89,11 @@ jobs:
             systemctl restart nginx
             
             # --- DIAGNÓSTICO ---
-            echo "--- ESTRUTURA DE PASTAS ---"
-            ls -R /var/www/contabilidade
-            echo "--- PORTAS ATIVAS ---"
-            netstat -tulpn | grep -E ':80|:443' || true
-            echo "--- TESTE LOCAL ---"
-            curl -I http://localhost || true
+            echo "--- ESTRUTURA DE PASTAS (Final) ---"
+            ls -la /var/www/contabilidade
+            echo "--- O QUE ESTÁ RODANDO NAS PORTAS 80 e 443 ---"
+            ss -tulpn | grep -E ':80|:443' || true
+            echo "--- TESTE DE ACESSO LOCAL ---"
+            curl -I http://localhost
+            echo "--- TESTE DE CONTEÚDO (Primeiras 5 linhas) ---"
+            head -n 5 /var/www/contabilidade/index.html
