@@ -54,34 +54,41 @@ jobs:
               apt-get install -y nginx
             fi
 
-            # Criar arquivo de config direto se não existir (para evitar erro de mv)
+            # Criar arquivo de config direto com caminhos absolutos e debug log
             cat << 'EOF' > /etc/nginx/sites-available/contabilidade
             server {
                 listen 80 default_server;
                 listen [::]:80 default_server;
+                server_name _;
 
                 root /var/www/contabilidade;
-                index index.html index.htm;
-
-                server_name _;
+                index index.html;
 
                 location / {
                     try_files $uri $uri/ /index.html;
                 }
 
-                error_log  /var/log/nginx/contabilidade_error.log;
-                access_log /var/log/nginx/contabilidade_access.log;
+                error_log /var/log/nginx/debug_contabilidade.log debug;
             }
             EOF
 
-            # Derrubar apache e nginx para garantir que a porta 80 está livre
+            # Garantir que a pasta existe e tem permissão
+            mkdir -p /var/www/contabilidade
+            
+            # Limpar lixo de deploys anteriores (apenas se for lixo conhecido)
+            # A gente sabe que scp-action joga os arquivos na raiz de target se strip_components for usado certo
+            
+            # Resetar Nginx vinculando a config
+            rm -f /etc/nginx/sites-enabled/default
+            ln -sf /etc/nginx/sites-available/contabilidade /etc/nginx/sites-enabled/
+            
+            # Matar processos que roubam a porta 80
             systemctl stop apache2 2>/dev/null || true
-            systemctl stop nginx 2>/dev/null || true
             fuser -k 80/tcp 2>/dev/null || true
             
-            # Verificar se a configuração está ok e iniciar
-            nginx -t && systemctl start nginx
-            
-            # Ajustar permissões finais
+            # Aplicar permissões
             chown -R www-data:www-data /var/www/contabilidade
             chmod -R 755 /var/www/contabilidade
+            
+            # Reiniciar
+            systemctl restart nginx
