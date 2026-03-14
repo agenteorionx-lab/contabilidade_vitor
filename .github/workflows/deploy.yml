@@ -37,7 +37,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
-          source: "frontend/dist/*"
+          source: "frontend/dist/*,nginx.conf"
           target: "/var/www/contabilidade"
           strip_components: 2
 
@@ -48,11 +48,31 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
-            # Enviar o arquivo nginx.conf se ele existir no repo
-            # (Note: scp-action acima já pode ter enviado se estiver em frontend/dist, 
-            # mas o nginx.conf está na raiz do projeto)
-            
+            # Instalar Nginx se não existir
+            if ! command -v nginx > /dev/null; then
+              apt-get update
+              apt-get install -y nginx
+            fi
+
+            # Mover arquivos para o lugar certo
+            # scp-action coloca em /var/www/contabilidade/nginx.conf
+            mv /var/www/contabilidade/nginx.conf /etc/nginx/sites-available/contabilidade
+
+            # Criar pasta /var/www/contabilidade/dist se não existir (para o root do nginx.conf)
+            mkdir -p /var/www/contabilidade/dist
+            # Mover o conteúdo para dentro de dist para bater com o nginx.conf antigo ou ajustar nginx.conf
+            # Para simplificar, vamos garantir que o nginx.conf aponte para /var/www/contabilidade
+            sed -i 's|root /var/www/contabilidade/dist;|root /var/www/contabilidade/frontend/dist;|g' /etc/nginx/sites-available/contabilidade
+            # Na verdade, scp enviou frontend/dist/* para /var/www/contabilidade/
+            # Então os arquivos estão direto em /var/www/contabilidade/
+            sed -i 's|root /var/www/contabilidade/dist;|root /var/www/contabilidade;|g' /etc/nginx/sites-available/contabilidade
+
             # Resetar Nginx
             rm -f /etc/nginx/sites-enabled/default
+            ln -sf /etc/nginx/sites-available/contabilidade /etc/nginx/sites-enabled/
+            
+            # Derrubar apache se existir
             systemctl stop apache2 2>/dev/null || true
+            
+            # Reiniciar Nginx
             systemctl restart nginx
