@@ -92,3 +92,11 @@ jobs:
             
             # Reiniciar
             systemctl restart nginx
+            
+            # --- DIAGNÓSTICO ---
+            echo "--- ESTRUTURA DE PASTAS ---"
+            ls -R /var/www/contabilidade
+            echo "--- PORTAS ATIVAS ---"
+            netstat -tulpn | grep -E ':80|:443' || true
+            echo "--- TESTE LOCAL ---"
+            curl -I http://localhost || true
