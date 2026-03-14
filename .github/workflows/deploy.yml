@@ -39,7 +39,7 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           source: "frontend/dist/*"
           target: "/var/www/contabilidade"
-          strip_components: 2
+          strip_components: 2 # Isso faz os arquivos do dist irem direto para /var/www/contabilidade/
 
       - name: Configure Nginx and Restart
         uses: appleboy/ssh-action@master
@@ -54,20 +54,25 @@ jobs:
               apt-get install -y nginx
             fi
 
-            # Mover arquivos para o lugar certo
-            # Agora o nginx.conf está na raiz de /var/www/contabilidade/
-            if [ -f /var/www/contabilidade/nginx.conf ]; then
-              mv /var/www/contabilidade/nginx.conf /etc/nginx/sites-available/contabilidade
-            fi
+            # Criar arquivo de config direto se não existir (para evitar erro de mv)
+            cat << 'EOF' > /etc/nginx/sites-available/contabilidade
+            server {
+                listen 80 default_server;
+                listen [::]:80 default_server;
 
-            # Garantir que o nginx.conf aponte para a pasta certa (/var/www/contabilidade)
-            if [ -f /etc/nginx/sites-available/contabilidade ]; then
-              sed -i 's|root /var/www/contabilidade/dist;|root /var/www/contabilidade;|g' /etc/nginx/sites-available/contabilidade
-              
-              # Ativar configuração
-              rm -f /etc/nginx/sites-enabled/default
-              ln -sf /etc/nginx/sites-available/contabilidade /etc/nginx/sites-enabled/
-            fi
+                root /var/www/contabilidade;
+                index index.html index.htm;
+
+                server_name _;
+
+                location / {
+                    try_files $uri $uri/ /index.html;
+                }
+
+                error_log  /var/log/nginx/contabilidade_error.log;
+                access_log /var/log/nginx/contabilidade_access.log;
+            }
+            EOF
 
             # Derrubar apache e nginx para garantir que a porta 80 está livre
             systemctl stop apache2 2>/dev/null || true
