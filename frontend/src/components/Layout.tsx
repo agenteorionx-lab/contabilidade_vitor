@@ -84,7 +84,7 @@ const Layout = () => {
             {/* Sidebar */}
             <aside className={`${isOpen ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-50 w-64 bg-card/95 backdrop-blur-md border-r border-border transition-transform lg:static lg:translate-x-0`}>
                 <div className="flex items-center justify-center h-16 border-b border-border relative px-4">
-                    <img src="/logo.png" alt="OrionX Logo" className="h-10 w-auto object-contain" />
+                    <img src="/logo.png" alt="OrionX Logo" className="h-14 w-auto object-contain" />
                     <button onClick={() => setIsOpen(false)} className="lg:hidden absolute right-4">
                         <X size={24} />
                     </button>
