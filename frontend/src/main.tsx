@@ -5,7 +5,16 @@ import { dark } from '@clerk/themes'
 import App from './App.tsx'
 import './index.css'
 
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+const sanitizeKey = (key: string | undefined) => {
+  if (!key) return "";
+  const trimmed = key.trim();
+  if (trimmed.includes('=')) {
+    return trimmed.split('=')[1].trim();
+  }
+  return trimmed;
+};
+
+const PUBLISHABLE_KEY = sanitizeKey(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
 
 console.log("Clerk Key Detected:", PUBLISHABLE_KEY ? "Yes (starts with " + PUBLISHABLE_KEY.substring(0, 10) + "...)" : "No");
 
