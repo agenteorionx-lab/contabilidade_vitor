@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "start": "node server.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "express": "^4.18.2",
     "@clerk/clerk-react": "^5.61.3",
     "@clerk/themes": "^2.4.57",
     "@supabase/supabase-js": "^2.99.1",
