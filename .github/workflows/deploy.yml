@@ -84,7 +84,8 @@ jobs:
             # Matar processos que roubam porta 80 (Apenas se necessário)
             systemctl stop apache2 2>/dev/null || true
             if command -v fuser > /dev/null; then fuser -k 80/tcp 2>/dev/null || true; fi
-            
+            if command -v fuser > /dev/null; then fuser -k 443/tcp 2>/dev/null || true; fi
+
             # Permissões
             chown -R www-data:www-data /var/www/contabilidade
             chmod -R 755 /var/www/contabilidade
@@ -92,8 +93,12 @@ jobs:
             # Reiniciar Nginx
             nginx -t && systemctl restart nginx
             
-            # --- DIAGNÓSTICO SIMPLES ---
-            echo "--- SITE ESTÁ NO AR? ---"
-            curl -I http://localhost || echo "Erro ao acessar localhost"
-            echo "--- ESTRUTURA ---"
-            ls -la /var/www/contabilidade | head -n 10
+            # --- DIAGNÓSTICO PROFUNDO ---
+            echo "--- QUEM ESTÁ NA PORTA 80 e 443? ---"
+            ss -tulpn | grep -E ':80|:443' || true
+            echo "--- TEM DOCKER RODANDO? ---"
+            if command -v docker > /dev/null; then docker ps || echo "Docker sem permissão"; fi
+            echo "--- LOGS DO NGINX (Últimas 10 linhas) ---"
+            tail -n 10 /var/log/nginx/error.log || true
+            echo "--- TESTE LOCAL ---"
+            curl -I http://localhost
