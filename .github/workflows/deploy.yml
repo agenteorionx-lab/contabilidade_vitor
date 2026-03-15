@@ -81,32 +81,19 @@ jobs:
             systemctl stop apache2 2>/dev/null || true
             if command -v fuser > /dev/null; then fuser -k 80/tcp 2>/dev/null || true; fi
             
-            # Abrir firewall (UFW)
-            if command -v ufw > /dev/null; then
-              ufw allow 22/tcp
-              ufw allow 80/tcp
-              ufw allow 443/tcp
-              ufw --force enable
-            fi
+            # Matar processos que roubam porta 80 (Apenas se necessário)
+            systemctl stop apache2 2>/dev/null || true
+            if command -v fuser > /dev/null; then fuser -k 80/tcp 2>/dev/null || true; fi
             
             # Permissões
             chown -R www-data:www-data /var/www/contabilidade
             chmod -R 755 /var/www/contabilidade
             
-            # Reiniciar
-            systemctl restart nginx
+            # Reiniciar Nginx
+            nginx -t && systemctl restart nginx
             
-            # --- DIAGNÓSTICO (Final) ---
-            echo "--- SITES ATIVOS ---"
-            ls -la /etc/nginx/sites-enabled/
-            echo "--- ESTRUTURA DE PASTAS ---"
-            ls -la /var/www/contabilidade
-            echo "--- PORTAS (SS) ---"
-            ss -tulpn | grep -E ':80|:443' || true
-            echo "--- TESTE LOCAL IP EXTERNO ---"
-            curl -I http://147.93.179.208 || true
-            echo "--- ÚLTIMAS LINHAS DO ERRO ---"
-            tail -n 20 /var/log/nginx/debug_contabilidade.log || true
-            echo "--- CHECANDO FIREWALL ---"
-            ufw status || true
-            iptables -L -n | grep :80 || true
+            # --- DIAGNÓSTICO SIMPLES ---
+            echo "--- SITE ESTÁ NO AR? ---"
+            curl -I http://localhost || echo "Erro ao acessar localhost"
+            echo "--- ESTRUTURA ---"
+            ls -la /var/www/contabilidade | head -n 10
