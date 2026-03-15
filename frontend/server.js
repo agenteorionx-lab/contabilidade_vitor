@@ -1,7 +1,12 @@
-const express = require('express');
-const path = require('path');
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
-const PORT = 3001; // Usando 3001 para não conflitar com o clube-v3 (3000)
+const PORT = 3001;
 
 // Servir arquivos estáticos da pasta dist
 app.use(express.static(path.join(__dirname, 'dist')));

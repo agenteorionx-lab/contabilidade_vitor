@@ -50,13 +50,24 @@ jobs:
           script: |
             cd /root/contabilidade
             
-            # Instalar apenas o express para o servidor rodar
-            npm install express
+            # Instalar dependências completas para o server
+            npm install express path
             
-            # Rodar Dashboard no PM2 (Porta 3001)
+            # Rodar Dashboard no PM2
             pm2 delete contabilidade 2>/dev/null || true
             pm2 start server.js --name "contabilidade"
-            pm2 save
             
+            # ESPERAR O BOOT E VER LOGS
+            sleep 5
+            echo "--- STATUS PM2 ---"
+            pm2 status
+            echo "--- ERROS PM2 (Se houver) ---"
+            pm2 logs contabilidade --lines 20 --no-daemon &
+            sleep 3
+            pkill -f "pm2 logs"
+            
+            echo "--- CHECANDO PORTA 3001 LOCALMENTE ---"
+            curl -I http://localhost:3001 || echo "ERRO: O servidor não iniciou na porta 3001"
+            
+            pm2 save
             echo "--- DEPLOY FINALIZADO ---"
-            echo "Acesse em: http://147.93.179.208:3001"
