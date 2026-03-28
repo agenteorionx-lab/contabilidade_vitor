@@ -1,11 +1,11 @@
 export type TipoOrigin = "PF" | "PJ";
 export type TipoTransacao = "RECEITA" | "DESPESA";
 export type MetodoPagamento = "PIX" | "Cartão de Crédito" | "Dinheiro" | "Boleto" | "Transferência";
-export type StatusInvestimento = "Ativo" | "Quitado";
 export type StatusDivida = "Em Andamento" | "Quitada";
 
 export interface DashboardEntity {
     id: string; // uuid
+    orgId?: string | null; // Multi-tenant org ID
 }
 
 export interface Tag {
@@ -14,8 +14,7 @@ export interface Tag {
     cor: string; // hex color
 }
 
-export interface ContaBancaria {
-    id: string;
+export interface ContaBancaria extends DashboardEntity {
     nome: string;
     saldoInicial: number;
     instituicao: string; // ex: 'Nubank', 'Itaú'
@@ -24,8 +23,7 @@ export interface ContaBancaria {
     incluirSoma: boolean;
 }
 
-export interface CartaoCredito {
-    id: string;
+export interface CartaoCredito extends DashboardEntity {
     nome: string;
     limite: number;
     diaVencimento: number;
@@ -51,27 +49,6 @@ export interface Lancamento extends DashboardEntity {
     ignorarNoDashboard?: boolean; // Flag para transferências/pagamentos de fatura que não afetam a DRE
     cartaoCreditado?: string; // Nome do cartão que teve a fatura paga para recalcular limite
     observacoes?: string;
-}
-
-export interface Investimento extends DashboardEntity {
-    investidor: string;
-    origem: TipoOrigin;
-    valorRecebido: number;
-    valorDevolver: number;
-    dataInicio: string; // YYYY-MM-DD
-    dataFim: string; // YYYY-MM-DD
-    status: StatusInvestimento;
-    observacoes?: string;
-}
-
-export interface AtivoBolsa extends DashboardEntity {
-    ticker: string; // ex: RZAK11
-    empresa: string;
-    setor: string;
-    quantia: number;
-    valorPago: number; // Preço Médio pago por cota
-    valorAtual: number; // Cotação atual no mercado
-    rendiTrimes: number; // Dividendos recebidos
 }
 
 export interface Divida extends DashboardEntity {
@@ -105,15 +82,12 @@ export interface CustoFixo extends DashboardEntity {
 
 export interface StoreState {
     lancamentos: Lancamento[];
-    investimentos: Investimento[];
-    ativosBolsa: AtivoBolsa[];
     dividas: Divida[];
     custosFixos: CustoFixo[];
     config: ConfigData;
     userId: string | null;
+    activeOrgId: string | null;
     setLancamentos: (l: Lancamento[]) => void;
-    setInvestimentos: (i: Investimento[]) => void;
-    setAtivosBolsa: (a: AtivoBolsa[]) => void;
     setDividas: (d: Divida[]) => void;
     setCustosFixos: (c: CustoFixo[]) => void;
     setConfig: (c: ConfigData) => void;
@@ -125,8 +99,10 @@ export interface StoreState {
     // precisamos de uma ação para cascatear o nome antigo pro nome novo em Lançamentos Históricos
     cascadeAgenciaGlobal: (oldName: string, newName: string) => void;
 
-    // Cloud Sync (Supabase)
+    // Cloud Sync (Supabase & Clerk Orgs)
     setUserId: (userId: string | null) => void;
-    initializeFromCloud: (userId: string) => Promise<void>;
+    setActiveOrgId: (orgId: string | null) => void;
+    initializeFromCloud: (userId: string, orgId?: string | null) => Promise<void>;
     clearState: () => void;
+    seedMockData: () => void;
 }

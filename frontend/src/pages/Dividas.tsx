@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useStore } from '../store/useStore';
+import { useStore, useActiveData } from '../store/useStore';
 import type { Divida } from '../types';
 import { Plus, ReceiptEuro, WalletCards, CheckCircle2, CircleDashed, Trash2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
@@ -9,7 +9,7 @@ const formatCurrency = (val: number) => {
 };
 
 const Dividas = () => {
-    const { dividas, setDividas, lancamentos } = useStore();
+    const { dividas, setDividas, lancamentos } = useActiveData();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [filterStatus, setFilterStatus] = useState<'Todas' | 'Em Andamento' | 'Liquidada'>('Em Andamento');
 

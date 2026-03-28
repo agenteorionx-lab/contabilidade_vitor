@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useStore } from '../store/useStore';
+import { useStore, useActiveData } from '../store/useStore';
+import { useOrganization } from '@clerk/clerk-react';
 import { Settings, Plus, Trash2, Tag as TagIcon, AlertTriangle } from 'lucide-react';
 import type { Tag } from '../types';
 
@@ -92,7 +93,21 @@ const Config = () => {
         setConfig,
         renameCategoriaGlobal,
         deleteCategoriaGlobal
-    } = useStore();
+    } = useActiveData();
+
+    const { organization, membership } = useOrganization();
+    const isAdmin = !organization || membership?.role === 'org:admin';
+
+    if (!isAdmin) {
+        return (
+            <div className="flex flex-col items-center justify-center p-12 text-center text-slate-400 mt-20">
+                <AlertTriangle size={64} className="text-warning mb-6 opacity-80" />
+                <h2 className="text-2xl font-bold text-slate-200 mb-2">Acesso Restrito</h2>
+                <p>O seu perfil possui nível de acesso restrito nesta organização.</p>
+                <p>Apenas Sócios-Administradores podem modificar estas configurações.</p>
+            </div>
+        );
+    }
 
     // Tags states
     const [newTagNome, setNewTagNome] = useState('');
@@ -225,12 +240,38 @@ const Config = () => {
             </div>
 
             {/* Danger Zone */}
-            <div className="mt-8 pt-8 border-t border-border/50 flex justify-end">
+            <div className="mt-8 pt-8 border-t border-border/50 flex flex-wrap gap-4 justify-between items-center">
+                <div className="flex gap-4">
+                    <button
+                        onClick={() => {
+                            if (confirm("Isso irá preencher seu dashboard com dados fictícios para fins de teste. Deseja continuar?")) {
+                                useStore.getState().seedMockData();
+                                alert("Dados de teste gerados com sucesso!");
+                            }
+                        }}
+                        className="flex items-center gap-2 bg-success/10 text-success hover:bg-success/20 px-4 py-2 rounded-xl transition-all text-sm font-bold border border-success/20"
+                    >
+                        ✨ Gerar Dados de Teste
+                    </button>
+
+                    <button
+                        onClick={() => {
+                            if (confirm("Isso irá apagar TODOS os seus dados locais. Tem certeza?")) {
+                                useStore.getState().clearState();
+                                window.location.reload();
+                            }
+                        }}
+                        className="flex items-center gap-2 bg-slate-800 text-slate-400 hover:text-white px-4 py-2 rounded-xl transition-all text-sm font-medium"
+                    >
+                        <Trash2 size={16} /> Limpar Tudo
+                    </button>
+                </div>
+
                 <button
                     onClick={handleResetAll}
                     className="flex items-center gap-2 text-danger opacity-60 hover:opacity-100 hover:bg-danger/10 px-4 py-2 rounded-xl transition-all text-sm font-medium"
                 >
-                    <AlertTriangle size={16} /> Restaurar Listas Padrões
+                    <AlertTriangle size={16} /> Restaurar Tabelas Padrões
                 </button>
             </div>
 

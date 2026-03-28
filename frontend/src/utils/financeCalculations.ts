@@ -1,4 +1,4 @@
-import type { Lancamento, Investimento, TipoOrigin } from '../types';
+import type { Lancamento, TipoOrigin } from '../types';
 import { parseISO, getMonth, getYear, isBefore, endOfMonth } from 'date-fns';
 
 /**
@@ -62,21 +62,11 @@ export const getAccumulatedBalance = (
 };
 
 
-
-/**
- * ROI Calculation for Investments
- */
-export const calculateROI = (valorRecebido: number, valorDevolver: number) => {
-    if (valorRecebido === 0) return 0;
-    return ((valorDevolver - valorRecebido) / valorRecebido) * 100;
-};
-
 /**
  * Totals for Dashboard
  */
 export const getDashboardTotals = (
     lancamentos: Lancamento[],
-    investimentos: Investimento[],
     year: number,
     month: number,
     origin?: TipoOrigin
@@ -84,21 +74,13 @@ export const getDashboardTotals = (
     const { receita, despesa, despesaFixa, despesaVariavel, saldo } = getMonthlyCashFlow(lancamentos, year, month, origin);
     const caixaAcumulado = getAccumulatedBalance(lancamentos, year, month, origin);
 
-    let investidoTotal = 0;
-    (investimentos || []).forEach(i => {
-        if ((!origin || i.origem === origin) && i.status === 'Ativo') {
-            investidoTotal += i.valorRecebido;
-        }
-    });
-
     return {
         receita,
         despesa,
         despesaFixa,
         despesaVariavel,
         saldo,
-        caixaAcumulado,
-        investidoTotal
+        caixaAcumulado
     };
 };
 
@@ -166,4 +148,30 @@ export const getAnnualSummary = (
             health: health.toFixed(1)
         }
     };
+};
+
+/**
+ * Breakdown of expenses by category for a specific month
+ */
+export const getCategoryBreakdown = (
+    lancamentos: Lancamento[],
+    year: number,
+    month: number,
+    origin?: TipoOrigin
+) => {
+    const breakdown: Record<string, number> = {};
+    (lancamentos || []).forEach(l => {
+        if (l.tipo !== 'DESPESA' || l.ignorarNoDashboard) return;
+        
+        const date = parseISO(l.data);
+        if (getYear(date) === year && getMonth(date) === month) {
+            if (!origin || l.origem === origin) {
+                breakdown[l.categoria] = (breakdown[l.categoria] || 0) + l.valor;
+            }
+        }
+    });
+
+    return Object.entries(breakdown)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value);
 };

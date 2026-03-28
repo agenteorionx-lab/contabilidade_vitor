@@ -11,6 +11,7 @@ import Dividas from './pages/Dividas';
 import CustosFixos from './pages/CustosFixos';
 import Config from './pages/Config';
 import Acesso from './pages/Acesso';
+import Membros from './pages/Membros';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
 
@@ -55,6 +56,7 @@ function App() {
           <Route path="dividas" element={<Dividas />} />
           <Route path="custos-fixos" element={<CustosFixos />} />
           <Route path="config" element={<Config />} />
+          <Route path="membros" element={<Membros />} />
           <Route path="acesso/*" element={<Acesso />} />
         </Route>
 

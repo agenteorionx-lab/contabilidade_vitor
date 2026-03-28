@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useStore } from '../store/useStore';
+import { useStore, useActiveData } from '../store/useStore';
 import type { CustoFixo, Lancamento, TipoOrigin } from '../types';
+import { useOrganization } from '@clerk/clerk-react';
 import { Plus, CheckCircle2, CircleDashed, CalendarDays, Trash2, Home, Activity } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -18,9 +19,21 @@ const generateId = () => {
 };
 
 const CustosFixos = () => {
-    const { custosFixos = [], lancamentos = [], setCustosFixos, setLancamentos, config } = useStore();
+    const { custosFixos = [], lancamentos = [], setCustosFixos, setLancamentos, config } = useActiveData();
     const [isGestaoModalOpen, setIsGestaoModalOpen] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+    const { organization, membership } = useOrganization();
+    const isAdmin = !organization || membership?.role === 'org:admin';
+
+    if (!isAdmin) {
+        return (
+            <div className="flex flex-col items-center justify-center p-12 text-center text-slate-400 mt-20">
+                <h2 className="text-2xl font-bold text-slate-200 mb-2">Acesso Restrito</h2>
+                <p>A gestão de Custos Fixos estruturais exige nível de Sócio-Administrador.</p>
+            </div>
+        );
+    }
 
     // Filtro de Mês/Ano para visualizar pagamentos
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());

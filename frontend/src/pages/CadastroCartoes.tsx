@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useStore } from '../store/useStore';
+import { useStore, useActiveData } from '../store/useStore';
 import { Plus, Edit2, Trash2, CreditCard, Calendar, Check } from 'lucide-react';
+import { useOrganization } from '@clerk/clerk-react';
 import type { CartaoCredito } from '../types';
 
 const generateId = () => {
@@ -15,7 +16,7 @@ const formatCurrency = (val: number) => {
 };
 
 const CadastroCartoes = () => {
-    const { config, setConfig, cascadeAgenciaGlobal } = useStore();
+    const { config, setConfig, cascadeAgenciaGlobal } = useActiveData();
     const cartoes = config.cartoesCredito || [];
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,8 +27,13 @@ const CadastroCartoes = () => {
     const [limite, setLimite] = useState('');
     const [instituicao, setInstituicao] = useState('');
     const [diaVencimento, setDiaVencimento] = useState(10);
-    const [diaFechamento, setDiaFechamento] = useState(3);
-    const [cor, setCor] = useState('#8b5cf6'); // purple default
+    const [diaFechamento, setDiaFechamento] = useState<number>(3);
+    const [cor, setCor] = useState('#000000');
+
+    const { organization, membership } = useOrganization();
+    const isAdmin = !organization || membership?.role === 'org:admin';
+
+    if (!isAdmin) return <div className="p-8 text-center text-slate-400">Acesso Restrito (Admin Apenas)</div>;
 
     const presetColors = ['#0ea5e9', '#8b5cf6', '#84cc16', '#f59e0b', '#ef4444', '#f43f5e', '#64748b'];
 

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { StoreState, ConfigData } from '../types';
+import { useMemo } from 'react';
+import type { StoreState, ConfigData, Lancamento } from '../types';
 import { supabase } from '../lib/supabaseClient';
 
 const generateId = () => {
@@ -11,7 +12,7 @@ const generateId = () => {
 };
 
 const initialConfig: ConfigData = {
-    categoriasReceita: ['Salário', 'Serviços', 'Venda', 'Investimento', 'Outros'],
+    categoriasReceita: ['Salário', 'Serviços', 'Venda', 'Outros'],
     categoriasDespesa: ['Mercado', 'Moradia', 'Energia', 'Água', 'Lazer', 'Impostos', 'Transporte', 'Saúde'],
     contas: [],
     cartoesCredito: [],
@@ -26,75 +27,73 @@ export const useStore = create<StoreState>()(
     persist(
         (set, get) => ({
             lancamentos: [],
-            investimentos: [],
-            ativosBolsa: [],
             dividas: [],
             custosFixos: [],
             config: initialConfig,
             userId: null,
+            activeOrgId: null,
 
             setUserId: (userId: string | null) => set({ userId }),
+            setActiveOrgId: (orgId: string | null) => set({ activeOrgId: orgId }),
 
             setLancamentos: async (lancamentos) => {
-                set({ lancamentos });
-                const userId = get().userId;
+                const { userId, activeOrgId, lancamentos: allL } = get();
+                const others = allL.filter(l => activeOrgId ? l.orgId !== activeOrgId : (l.orgId && l.orgId !== null));
+                const combined = [...others, ...lancamentos];
+                set({ lancamentos: combined });
+                
                 if (userId && import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('placeholder')) {
-                    // Sync to cloud (Simplified bulk upsert for this dashboard)
-                    // In a production app with high volume, we'd sync individual changes
-                    const syncData = lancamentos.map(l => ({ ...l, user_id: userId }));
+                    const syncData = lancamentos.map(l => ({ ...l, user_id: userId, org_id: activeOrgId }));
                     await supabase.from('lancamentos').upsert(syncData);
                 }
             },
-            setInvestimentos: async (investimentos) => {
-                set({ investimentos });
-                const userId = get().userId;
-                if (userId && import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('placeholder')) {
-                    const syncData = investimentos.map(i => ({ ...i, user_id: userId }));
-                    await supabase.from('investimentos').upsert(syncData);
-                }
-            },
-            setAtivosBolsa: async (ativosBolsa) => {
-                set({ ativosBolsa });
-                const userId = get().userId;
-                if (userId && import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('placeholder')) {
-                    // Assuming assets table exists or we'll add it
-                    const syncData = ativosBolsa.map(a => ({ ...a, user_id: userId }));
-                    await supabase.from('ativos_bolsa').upsert(syncData);
-                }
-            },
             setDividas: async (dividas) => {
-                set({ dividas });
-                const userId = get().userId;
+                const { userId, activeOrgId, dividas: allD } = get();
+                const others = allD.filter(d => activeOrgId ? d.orgId !== activeOrgId : (d.orgId && d.orgId !== null));
+                set({ dividas: [...others, ...dividas] });
+                
                 if (userId && import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('placeholder')) {
-                    const syncData = dividas.map(d => ({ ...d, user_id: userId }));
+                    const syncData = dividas.map(d => ({ ...d, user_id: userId, org_id: activeOrgId }));
                     await supabase.from('dividas').upsert(syncData);
                 }
             },
             setCustosFixos: async (custosFixos) => {
-                set({ custosFixos });
-                const userId = get().userId;
+                const { userId, activeOrgId, custosFixos: allC } = get();
+                const others = allC.filter(c => activeOrgId ? c.orgId !== activeOrgId : (c.orgId && c.orgId !== null));
+                set({ custosFixos: [...others, ...custosFixos] });
+                
                 if (userId && import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('placeholder')) {
-                    const syncData = custosFixos.map(cf => ({ ...cf, user_id: userId }));
+                    const syncData = custosFixos.map(cf => ({ ...cf, user_id: userId, org_id: activeOrgId }));
                     await supabase.from('custos_fixos').upsert(syncData);
                 }
             },
             setConfig: async (config) => {
-                set({ config });
-                const userId = get().userId;
+                const { userId, activeOrgId, config: oldConfig } = get();
+                
+                // Preserve other orgs accounts/cards
+                const otherContas = oldConfig.contas?.filter(c => activeOrgId ? c.orgId !== activeOrgId : (c.orgId && c.orgId !== null)) || [];
+                const otherCartoes = oldConfig.cartoesCredito?.filter(c => activeOrgId ? c.orgId !== activeOrgId : (c.orgId && c.orgId !== null)) || [];
+                
+                const finalConfig = {
+                    ...config,
+                    contas: [...otherContas, ...(config.contas || [])],
+                    cartoesCredito: [...otherCartoes, ...(config.cartoesCredito || [])]
+                };
+                
+                set({ config: finalConfig });
+                
                 if (userId && import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.includes('placeholder')) {
-                    // Sync Accounts
                     if (config.contas) {
-                        const syncContas = config.contas.map(c => ({ ...c, user_id: userId }));
+                        const syncContas = config.contas.map(c => ({ ...c, user_id: userId, org_id: activeOrgId }));
                         await supabase.from('contas').upsert(syncContas);
                     }
-                    // Sync Cards
                     if (config.cartoesCredito) {
-                        const syncCards = config.cartoesCredito.map(c => ({ ...c, user_id: userId }));
+                        const syncCards = config.cartoesCredito.map(c => ({ ...c, user_id: userId, org_id: activeOrgId }));
                         await supabase.from('cartoes_credito').upsert(syncCards);
                     }
-                    // Sync Global Config (Categories, etc)
                     await supabase.from('config_global').upsert({
                         user_id: userId,
+                        org_id: activeOrgId,
                         categorias_receita: config.categoriasReceita,
                         categorias_despesa: config.categoriasDespesa,
                         metodos_pagamento: config.metodosPagamento,
@@ -106,8 +105,6 @@ export const useStore = create<StoreState>()(
             clearState: () => {
                 set({ 
                     lancamentos: [], 
-                    investimentos: [], 
-                    ativosBolsa: [], 
                     dividas: [], 
                     custosFixos: [], 
                     config: initialConfig,
@@ -121,36 +118,85 @@ export const useStore = create<StoreState>()(
                 }
 
                 try {
+                    let lancsQuery = supabase.from('lancamentos').select('*');
+                    let costsQuery = supabase.from('custos_fixos').select('*');
+                    let accsQuery = supabase.from('contas').select('*');
+                    let cardsQuery = supabase.from('cartoes_credito').select('*');
+                    let globQuery = supabase.from('config_global').select('*');
+                    let divsQuery = supabase.from('dividas').select('*');
+
+                    const { activeOrgId } = get();
+                    if (activeOrgId) {
+                        lancsQuery = lancsQuery.eq('org_id', activeOrgId);
+                        costsQuery = costsQuery.eq('org_id', activeOrgId);
+                        accsQuery = accsQuery.eq('org_id', activeOrgId);
+                        cardsQuery = cardsQuery.eq('org_id', activeOrgId);
+                        globQuery = globQuery.eq('org_id', activeOrgId);
+                        divsQuery = divsQuery.eq('org_id', activeOrgId);
+                    } else {
+                        lancsQuery = lancsQuery.eq('user_id', userId);
+                        costsQuery = costsQuery.eq('user_id', userId);
+                        accsQuery = accsQuery.eq('user_id', userId);
+                        cardsQuery = cardsQuery.eq('user_id', userId);
+                        globQuery = globQuery.eq('user_id', userId);
+                        divsQuery = divsQuery.eq('user_id', userId);
+                    }
+
                     const [
-                        { data: lancs },
-                        { data: invs },
-                        { data: costs },
-                        { data: accs },
-                        { data: cards },
-                        { data: glob }
+                        lancsRes,
+                        costsRes,
+                        accsRes,
+                        cardsRes,
+                        globRes,
+                        divsRes
                     ] = await Promise.all([
-                        supabase.from('lancamentos').select('*').eq('user_id', userId),
-                        supabase.from('investimentos').select('*').eq('user_id', userId),
-                        supabase.from('custos_fixos').select('*').eq('user_id', userId),
-                        supabase.from('contas').select('*').eq('user_id', userId),
-                        supabase.from('cartoes_credito').select('*').eq('user_id', userId),
-                        supabase.from('config_global').select('*').eq('user_id', userId).single()
+                        lancsQuery,
+                        costsQuery,
+                        accsQuery,
+                        cardsQuery,
+                        globQuery,
+                        divsQuery
                     ]);
 
-                    const newConfig = { ...get().config };
-                    if (accs) newConfig.contas = accs;
-                    if (cards) newConfig.cartoesCredito = cards;
-                    if (glob) {
-                        newConfig.categoriasReceita = glob.categorias_receita;
-                        newConfig.categoriasDespesa = glob.categorias_despesa;
-                        newConfig.metodosPagamento = glob.metodos_pagamento;
-                        newConfig.tags = glob.tags;
+                    // Proteção contra falhas no Supabase (ex: coluna org_id não existe)
+                    if (lancsRes.error) console.error("Supabase sync erro (lancamentos):", lancsRes.error);
+                    if (costsRes.error) console.error("Supabase sync erro (custos):", costsRes.error);
+                    if (globRes.error) console.error("Supabase sync erro (config):", globRes.error);
+                    if (divsRes.error) console.error("Supabase sync erro (dividas):", divsRes.error);
+
+                    const { lancamentos: currL, dividas: currD, custosFixos: currC, config: currConf } = get();
+                    
+                    // Preservar dados de outras Organizações no LocalStorage
+                    const keepLancs = currL.filter(l => activeOrgId ? l.orgId !== activeOrgId : (l.orgId && l.orgId !== null));
+                    const keepCosts = currC.filter(c => activeOrgId ? c.orgId !== activeOrgId : (c.orgId && c.orgId !== null));
+                    const keepDivs = currD.filter(d => activeOrgId ? d.orgId !== activeOrgId : (d.orgId && d.orgId !== null));
+                    const keepContas = currConf.contas?.filter(c => activeOrgId ? c.orgId !== activeOrgId : (c.orgId && c.orgId !== null)) || [];
+                    const keepCartoes = currConf.cartoesCredito?.filter(c => activeOrgId ? c.orgId !== activeOrgId : (c.orgId && c.orgId !== null)) || [];
+
+                    let newConfig = { ...currConf };
+                    
+                    if (globRes.data && globRes.data.length > 0) {
+                        const cloudConfig = globRes.data[0];
+                        newConfig = {
+                            ...newConfig,
+                            categoriasReceita: cloudConfig.categorias_receita || newConfig.categoriasReceita,
+                            categoriasDespesa: cloudConfig.categorias_despesa || newConfig.categoriasDespesa,
+                            metodosPagamento: cloudConfig.metodos_pagamento || newConfig.metodosPagamento,
+                            tags: cloudConfig.tags || newConfig.tags,
+                        };
+                    }
+                    
+                    if (!accsRes.error && accsRes.data) {
+                        newConfig.contas = [...keepContas, ...accsRes.data];
+                    }
+                    if (!cardsRes.error && cardsRes.data) {
+                        newConfig.cartoesCredito = [...keepCartoes, ...cardsRes.data];
                     }
 
                     set({
-                        lancamentos: lancs || [],
-                        investimentos: invs || [],
-                        custosFixos: costs || [],
+                        lancamentos: lancsRes.error ? currL : [...keepLancs, ...(lancsRes.data || [])],
+                        custosFixos: costsRes.error ? currC : [...keepCosts, ...(costsRes.data || [])],
+                        dividas: divsRes.error ? currD : [...keepDivs, ...(divsRes.data || [])],
                         config: newConfig
                     });
                 } catch (error) {
@@ -201,7 +247,6 @@ export const useStore = create<StoreState>()(
             // Update legacy data across the ledger when an Account or Card is renamed
             cascadeAgenciaGlobal: (oldName, newName) => set((state) => {
                 const newLancamentos = state.lancamentos.map(l => {
-                    // Method payments are distinct, but the "banco" field historically captured both Account ID or Card ID
                     if (l.banco === oldName) {
                         return { ...l, banco: newName };
                     }
@@ -209,6 +254,59 @@ export const useStore = create<StoreState>()(
                 });
                 return { lancamentos: newLancamentos };
             }),
+
+            seedMockData: () => {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = now.getMonth();
+                const formatD = (day: number) => {
+                    const d = new Date(year, month, day);
+                    return d.toISOString().split('T')[0];
+                };
+
+                const oid = get().activeOrgId;
+
+                const mockConfig: ConfigData = {
+                    ...get().config,
+                    contas: [
+                        { id: generateId(), orgId: oid, nome: 'NuBank PF', saldoInicial: 5000, instituicao: 'NuBank', carteira: 'Conta PF', cor: '#8b5cf6', incluirSoma: true },
+                        { id: generateId(), orgId: oid, nome: 'Itaú PJ', saldoInicial: 15000, instituicao: 'Itaú', carteira: 'Conta PJ', cor: '#f97316', incluirSoma: true }
+                    ],
+                    cartoesCredito: [
+                        { id: generateId(), orgId: oid, nome: 'Inter Black', limite: 10000, diaVencimento: 10, diaFechamento: 3, cor: '#000000', instituicao: 'Banco Inter' },
+                        { id: generateId(), orgId: oid, nome: 'Visa Platinum', limite: 5000, diaVencimento: 20, diaFechamento: 13, cor: '#3b82f6', instituicao: 'Bradesco' }
+                    ]
+                };
+
+                const mockLancamentos: Lancamento[] = [
+                    // Receitas
+                    { id: generateId(), orgId: oid, data: formatD(5), descricao: 'Salário Mensal', valor: 8500, tipo: 'RECEITA', categoria: 'Salário', banco: 'NuBank PF', origem: 'PF', metodoPagamento: 'PIX' },
+                    { id: generateId(), orgId: oid, data: formatD(10), descricao: 'Projeto Freelance', valor: 3200, tipo: 'RECEITA', categoria: 'Serviços', banco: 'Itaú PJ', origem: 'PJ', metodoPagamento: 'Transferência' },
+                    
+                    // Despesas Fixas
+                    { id: generateId(), orgId: oid, data: formatD(1), descricao: 'Aluguel Apê', valor: 2800, tipo: 'DESPESA', categoria: 'Moradia', banco: 'NuBank PF', origem: 'PF', metodoPagamento: 'Boleto', custoFixoId: generateId() },
+                    { id: generateId(), orgId: oid, data: formatD(5), descricao: 'Energia Elétrica', valor: 250, tipo: 'DESPESA', categoria: 'Energia', banco: 'NuBank PF', origem: 'PF', metodoPagamento: 'PIX', custoFixoId: generateId() },
+                    
+                    // Despesas Variáveis
+                    { id: generateId(), orgId: oid, data: formatD(12), descricao: 'Jantar Restaurante', valor: 180, tipo: 'DESPESA', categoria: 'Lazer', banco: 'NuBank PF', origem: 'PF', metodoPagamento: 'PIX' },
+                    { id: generateId(), orgId: oid, data: formatD(15), descricao: 'Mercado Semanal', valor: 450, tipo: 'DESPESA', categoria: 'Mercado', banco: 'NuBank PF', origem: 'PF', metodoPagamento: 'PIX' },
+                    
+                    // Lançamentos no Cartão
+                    { id: generateId(), orgId: oid, data: formatD(8), descricao: 'Assinatura Netflix', valor: 55.90, tipo: 'DESPESA', categoria: 'Lazer', banco: 'Inter Black', origem: 'PF', metodoPagamento: 'Cartão de Crédito' },
+                    { id: generateId(), orgId: oid, data: formatD(14), descricao: 'Combustível', valor: 220, tipo: 'DESPESA', categoria: 'Transporte', banco: 'Inter Black', origem: 'PF', metodoPagamento: 'Cartão de Crédito' },
+                    { id: generateId(), orgId: oid, data: formatD(20), descricao: 'Compra Amazon', valor: 890, tipo: 'DESPESA', categoria: 'Outros', banco: 'Visa Platinum', origem: 'PF', metodoPagamento: 'Cartão de Crédito' }
+                ];
+
+                const existingLancamentos = get().lancamentos;
+                
+                set({
+                    config: mockConfig,
+                    lancamentos: [...existingLancamentos, ...mockLancamentos]
+                });
+
+                // Clear cloud sync to avoid polluting database during local tests
+                // (Optional, user can sync later if they change VITE_SUPABASE_URL)
+            },
         }),
         {
             name: 'finance-dashboard-storage',
@@ -286,3 +384,25 @@ export const useStore = create<StoreState>()(
         }
     )
 );
+
+// High-level hook to filter all state by the active organization without causing infinite renders
+export const useActiveData = () => {
+    const store = useStore(); // Inicia render tracking do zustand para TODO o store
+    
+    return useMemo(() => {
+        const oId = store.activeOrgId;
+        const isOwner = (item: any) => oId ? item.orgId === oId : (!item.orgId || item.orgId === null);
+        
+        return {
+            ...store,
+            lancamentos: (store.lancamentos || []).filter(isOwner),
+            dividas: (store.dividas || []).filter(isOwner),
+            custosFixos: (store.custosFixos || []).filter(isOwner),
+            config: store.config ? {
+                ...store.config,
+                contas: store.config.contas?.filter(isOwner) || [],
+                cartoesCredito: store.config.cartoesCredito?.filter(isOwner) || []
+            } : store.config
+        };
+    }, [store]);
+};

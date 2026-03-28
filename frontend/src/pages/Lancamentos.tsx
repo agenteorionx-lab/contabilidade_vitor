@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useStore } from '../store/useStore';
+import { useStore, useActiveData } from '../store/useStore';
 import type { Lancamento, TipoOrigin, TipoTransacao } from '../types';
-import { Plus, Search, Trash2, ArrowUpCircle, ArrowDownCircle, Layers, Tag as TagIcon } from 'lucide-react';
+import { Plus, Search, Trash2, Pencil, ArrowUpCircle, ArrowDownCircle, Layers, Tag as TagIcon } from 'lucide-react';
 import { format, parseISO, addMonths } from 'date-fns';
 
 const formatCurrency = (val: number) => {
@@ -17,8 +17,9 @@ const generateId = () => {
 };
 
 const Lancamentos = () => {
-    const { lancamentos = [], config, dividas = [], setLancamentos } = useStore();
+    const { lancamentos = [], config, dividas = [], setLancamentos } = useActiveData();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
 
     // Form State
     const [data, setData] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -56,54 +57,94 @@ const Lancamentos = () => {
         setTagsIds(prev => prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]);
     };
 
+    const handleEdit = (l: Lancamento) => {
+        setEditingId(l.id);
+        setData(l.data);
+        setTipo(l.tipo);
+        setCategoria(l.categoria);
+        setOrigem(l.origem);
+        setBanco(l.banco || '');
+        setMetodoPagamento(l.metodoPagamento || 'PIX');
+        setValor(l.valor.toString());
+        setDescricao(l.descricao);
+        setObservacoes(l.observacoes || '');
+        setDividaId(l.dividaId || '');
+        setTagsIds(l.tagsIds || []);
+        setIsModalOpen(true);
+    };
+
     const handleSave = (e: React.FormEvent) => {
         e.preventDefault();
         const numValor = parseFloat(valor);
         if (isNaN(numValor) || numValor <= 0) return;
 
         const baseDate = parseISO(data);
-        const newLancs: Lancamento[] = [];
-
-        if (tipo === 'DESPESA' && metodoPagamento === 'Cartão de Crédito' && parcelas > 1) {
-            const valorParcela = numValor / parcelas;
-            for (let i = 0; i < parcelas; i++) {
-                const dataParcela = format(addMonths(baseDate, i), 'yyyy-MM-dd');
+        
+        if (editingId) {
+            const updatedLancs = lancamentos.map(l => {
+                if (l.id === editingId) {
+                    return {
+                        ...l,
+                        data,
+                        tipo,
+                        categoria,
+                        origem,
+                        banco,
+                        metodoPagamento,
+                        valor: numValor,
+                        descricao,
+                        dividaId: dividaId || undefined,
+                        tagsIds: tagsIds.length > 0 ? tagsIds : undefined,
+                        observacoes: observacoes || undefined
+                    };
+                }
+                return l;
+            });
+            setLancamentos(updatedLancs);
+        } else {
+            const newLancs: Lancamento[] = [];
+            if (tipo === 'DESPESA' && metodoPagamento === 'Cartão de Crédito' && parcelas > 1) {
+                const valorParcela = numValor / parcelas;
+                for (let i = 0; i < parcelas; i++) {
+                    const dataParcela = format(addMonths(baseDate, i), 'yyyy-MM-dd');
+                    newLancs.push({
+                        id: generateId(),
+                        data: dataParcela,
+                        tipo,
+                        categoria,
+                        origem,
+                        banco,
+                        metodoPagamento,
+                        valor: valorParcela,
+                        descricao: `${descricao} (Parcela ${i + 1}/${parcelas})`,
+                        isParcela: true,
+                        parcelaInfo: `${i + 1}/${parcelas}`,
+                        dividaId: dividaId || undefined,
+                        tagsIds: tagsIds.length > 0 ? tagsIds : undefined,
+                        observacoes: observacoes || undefined
+                    });
+                }
+            } else {
                 newLancs.push({
                     id: generateId(),
-                    data: dataParcela,
+                    data,
                     tipo,
                     categoria,
                     origem,
                     banco,
                     metodoPagamento,
-                    valor: valorParcela,
-                    descricao: `${descricao} (Parcela ${i + 1}/${parcelas})`,
-                    isParcela: true,
-                    parcelaInfo: `${i + 1}/${parcelas}`,
+                    valor: numValor,
+                    descricao,
                     dividaId: dividaId || undefined,
                     tagsIds: tagsIds.length > 0 ? tagsIds : undefined,
                     observacoes: observacoes || undefined
                 });
             }
-        } else {
-            newLancs.push({
-                id: generateId(),
-                data,
-                tipo,
-                categoria,
-                origem,
-                banco,
-                metodoPagamento,
-                valor: numValor,
-                descricao,
-                dividaId: dividaId || undefined,
-                tagsIds: tagsIds.length > 0 ? tagsIds : undefined,
-                observacoes: observacoes || undefined
-            });
+            setLancamentos([...lancamentos, ...newLancs]);
         }
 
-        setLancamentos([...lancamentos, ...newLancs]);
         setIsModalOpen(false);
+        setEditingId(null);
         setValor('');
         setDescricao('');
         setObservacoes('');
@@ -142,7 +183,16 @@ const Lancamentos = () => {
                     <p className="text-slate-400 mt-1">Gerencie Pix, Boletos, e transações diversas.</p>
                 </div>
                 <button
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={() => {
+                        setEditingId(null);
+                        setValor('');
+                        setDescricao('');
+                        setObservacoes('');
+                        setParcelas(1);
+                        setDividaId('');
+                        setTagsIds([]);
+                        setIsModalOpen(true);
+                    }}
                     className="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-xl flex items-center gap-2 transition-colors shadow-lg shadow-primary/20"
                 >
                     <Plus size={20} /> Novo Lançamento
@@ -227,9 +277,14 @@ const Lancamentos = () => {
                                         {l.observacoes || '-'}
                                     </td>
                                     <td className="p-3 border-b border-border/50 text-center">
-                                        <button onClick={() => handleDelete(l.id)} className="p-2 text-slate-500 hover:text-danger hover:bg-danger/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
-                                            <Trash2 size={18} />
-                                        </button>
+                                        <div className="flex items-center justify-center gap-1">
+                                            <button onClick={() => handleEdit(l)} className="p-2 text-slate-500 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
+                                                <Pencil size={18} />
+                                            </button>
+                                            <button onClick={() => handleDelete(l.id)} className="p-2 text-slate-500 hover:text-danger hover:bg-danger/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -242,7 +297,7 @@ const Lancamentos = () => {
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
                     <div className="bg-card w-full max-w-xl rounded-2xl border border-border shadow-2xl p-6 relative animate-in fade-in zoom-in duration-200">
-                        <h2 className="text-2xl font-bold mb-6">Nova Transação</h2>
+                        <h2 className="text-2xl font-bold mb-6">{editingId ? 'Editar Transação' : 'Nova Transação'}</h2>
 
                         <form onSubmit={handleSave} className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
@@ -369,7 +424,7 @@ const Lancamentos = () => {
                                         value={metodoPagamento} onChange={e => setMetodoPagamento(e.target.value)}
                                         className="w-full bg-slate-900 border border-border rounded-lg p-2.5 text-slate-200 focus:border-primary outline-none"
                                     >
-                                        {(config.metodosPagamento || []).map(m => (
+                                        {(config.metodosPagamento || []).filter(m => m !== 'Cartão de Crédito').map(m => (
                                             <option key={m} value={m}>{m}</option>
                                         ))}
                                     </select>
@@ -401,7 +456,10 @@ const Lancamentos = () => {
 
                             <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-border">
                                 <button
-                                    type="button" onClick={() => setIsModalOpen(false)}
+                                    type="button" onClick={() => {
+                                        setIsModalOpen(false);
+                                        setEditingId(null);
+                                    }}
                                     className="px-4 py-2 text-slate-400 hover:text-white transition-colors"
                                 >
                                     Cancelar

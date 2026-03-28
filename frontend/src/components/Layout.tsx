@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { UserButton, useUser } from '@clerk/clerk-react';
+import { UserButton, useUser, OrganizationSwitcher, useOrganization } from '@clerk/clerk-react';
 import { useStore } from '../store/useStore';
 import {
     ArrowRightLeft,
@@ -18,39 +18,50 @@ import {
     FolderPlus,
     Landmark,
     WalletCards,
-    Lock
+    Lock,
+    Users
 } from 'lucide-react';
 
 const Layout = () => {
     const [isOpen, setIsOpen] = useState(true);
     const { user, isLoaded } = useUser();
+    const { organization, membership, isLoaded: isOrgLoaded } = useOrganization();
+    
+    // RBAC Logic: Is Admin if personal workspace (null org) or explicitly 'org:admin'
+    const isAdmin = !organization || membership?.role === 'org:admin';
+    
     const initializeFromCloud = useStore(state => state.initializeFromCloud);
     const clearState = useStore(state => state.clearState);
     const setUserId = useStore(state => state.setUserId);
+    const setActiveOrgId = useStore(state => state.setActiveOrgId);
 
     useEffect(() => {
-        if (isLoaded) {
+        if (isLoaded && isOrgLoaded) {
             if (user) {
+                const orgId = organization?.id || null;
                 setUserId(user.id);
-                initializeFromCloud(user.id);
+                setActiveOrgId(orgId);
+                initializeFromCloud(user.id, orgId);
             } else {
                 setUserId(null);
+                setActiveOrgId(null);
                 clearState();
             }
         }
-    }, [user, isLoaded, initializeFromCloud, clearState, setUserId]);
+    }, [user, organization, isLoaded, isOrgLoaded, initializeFromCloud, clearState, setUserId, setActiveOrgId]);
 
     // Suporte para múltiplos menus retráteis
     const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
         'Dashboard': true,
-        'Cadastro': true
+        'Cadastro': true,
+        'Lançamentos': true
     });
 
     const toggleMenu = (name: string) => {
         setOpenMenus(prev => ({ ...prev, [name]: !prev[name] }));
     };
 
-    const navItems = [
+    const mainNavItems = [
         {
             name: 'Dashboard',
             icon: <LayoutDashboard size={20} />,
@@ -60,7 +71,7 @@ const Layout = () => {
                 { name: 'Resultados Anuais', icon: <TrendingUp size={18} />, path: '/anual' },
             ]
         },
-        {
+        ...(isAdmin ? [{
             name: 'Cadastro',
             icon: <FolderPlus size={20} />,
             path: '#',
@@ -69,86 +80,106 @@ const Layout = () => {
                 { name: 'Contas Bancárias', icon: <Landmark size={18} />, path: '/cadastro/contas' },
                 { name: 'Custos Fixos', icon: <Home size={18} />, path: '/custos-fixos' },
             ]
+        }] : []),
+        {
+            name: 'Lançamentos',
+            icon: <ArrowRightLeft size={20} />,
+            path: '#',
+            children: [
+                { name: 'Contas', icon: <Landmark size={18} />, path: '/lancamentos' },
+                { name: 'Cartão', icon: <WalletCards size={18} />, path: '/cartoes' },
+                { name: 'Dívidas', icon: <ReceiptEuro size={18} />, path: '/dividas' },
+            ]
         },
-        // Itens independentes focados em input de dados
-        { name: 'Lançamentos (Contas)', icon: <ArrowRightLeft size={20} />, path: '/lancamentos' },
-        { name: 'Lançamentos (Cartão)', icon: <WalletCards size={20} />, path: '/cartoes' },
-        { name: 'Dívidas', icon: <ReceiptEuro size={20} />, path: '/dividas' },
-        { name: 'Configurações', icon: <Settings size={20} />, path: '/config' },
-        { name: 'Controle de Acesso', icon: <Lock size={20} />, path: '/acesso' },
     ];
+
+    const bottomNavItems = [
+        { name: 'Membros e Sócios', icon: <Users size={20} />, path: '/membros' },
+        ...(isAdmin ? [
+            { name: 'Configurações', icon: <Settings size={20} />, path: '/config' },
+            { name: 'Controle de Acesso', icon: <Lock size={20} />, path: '/acesso' }
+        ] : []),
+    ];
+
+    const renderNavItem = (item: any) => {
+        if (item.children) {
+            const isMenuOpen = openMenus[item.name];
+            return (
+                <div key={item.name} className="space-y-1 relative before:absolute before:left-4 before:top-12 before:-bottom-2 before:w-[2px] before:bg-slate-800">
+                    <button
+                        onClick={() => toggleMenu(item.name)}
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all text-slate-300 hover:bg-slate-800 hover:text-white font-semibold`}
+                    >
+                        <div className="flex items-center gap-3">
+                            {item.icon}
+                            <span>{item.name}</span>
+                        </div>
+                        {isMenuOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </button>
+
+                    {isMenuOpen && (
+                        <div className="pl-6 space-y-1 mt-1 relative">
+                            {item.children.map((child: any) => (
+                                <NavLink
+                                    key={child.path}
+                                    to={child.path}
+                                    onClick={() => { if (window.innerWidth < 1024) setIsOpen(false) }}
+                                    className={({ isActive }) =>
+                                        `flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all relative ${isActive
+                                            ? 'bg-primary/20 text-primary font-bold border border-primary/30 shadow-lg shadow-primary/10'
+                                            : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                                        }`
+                                    }
+                                >
+                                    {child.icon}
+                                    <span className="text-sm">{child.name}</span>
+                                </NavLink>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        return (
+            <NavLink
+                key={item.path}
+                to={item.path!}
+                onClick={() => { if (window.innerWidth < 1024) setIsOpen(false) }}
+                className={({ isActive }) =>
+                    `flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold ${isActive
+                        ? 'bg-primary/20 text-primary border border-primary/30 shadow-lg shadow-primary/10'
+                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    }`
+                }
+            >
+                {item.icon}
+                <span>{item.name}</span>
+            </NavLink>
+        );
+    };
 
     return (
         <div className="flex h-screen overflow-hidden bg-background text-slate-200">
 
             {/* Sidebar */}
-            <aside className={`${isOpen ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-50 w-64 bg-card/95 backdrop-blur-md border-r border-border transition-transform lg:static lg:translate-x-0`}>
-                <div className="flex items-center justify-center h-16 border-b border-border relative px-4 text-center">
+            <aside className={`${isOpen ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-50 w-64 bg-card/95 backdrop-blur-md border-r border-border transition-transform lg:static lg:translate-x-0 flex flex-col`}>
+                <div className="flex items-center justify-center h-16 border-b border-border relative px-4 text-center shrink-0">
                     <img src="/logo.png" alt="OrionX Logo" className="h-20 w-auto object-contain absolute z-10" />
                     <button onClick={() => setIsOpen(false)} className="lg:hidden absolute right-4 z-20">
                         <X size={24} />
                     </button>
                 </div>
 
-                <nav className="p-4 space-y-2 overflow-y-auto h-[calc(100vh-4rem)]">
-                    {navItems.map((item) => {
-                        if (item.children) {
-                            const isMenuOpen = openMenus[item.name];
-                            return (
-                                <div key={item.name} className="space-y-1 relative before:absolute before:left-4 before:top-12 before:-bottom-2 before:w-[2px] before:bg-slate-800">
-                                    <button
-                                        onClick={() => toggleMenu(item.name)}
-                                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all text-slate-300 hover:bg-slate-800 hover:text-white font-semibold`}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            {item.icon}
-                                            <span>{item.name}</span>
-                                        </div>
-                                        {isMenuOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                                    </button>
+                <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                    <nav className="space-y-2">
+                        {mainNavItems.map(renderNavItem)}
+                    </nav>
+                </div>
 
-                                    {isMenuOpen && (
-                                        <div className="pl-6 space-y-1 mt-1 relative">
-                                            {item.children.map((child) => (
-                                                <NavLink
-                                                    key={child.path}
-                                                    to={child.path}
-                                                    onClick={() => { if (window.innerWidth < 1024) setIsOpen(false) }}
-                                                    className={({ isActive }) =>
-                                                        `flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all relative ${isActive
-                                                            ? 'bg-primary/20 text-primary font-bold border border-primary/30 shadow-lg shadow-primary/10'
-                                                            : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                                                        }`
-                                                    }
-                                                >
-                                                    {child.icon}
-                                                    <span className="text-sm">{child.name}</span>
-                                                </NavLink>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        }
-
-                        return (
-                            <NavLink
-                                key={item.path}
-                                to={item.path!}
-                                onClick={() => { if (window.innerWidth < 1024) setIsOpen(false) }}
-                                className={({ isActive }) =>
-                                    `flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-semibold ${isActive
-                                        ? 'bg-primary/20 text-primary border border-primary/30 shadow-lg shadow-primary/10'
-                                        : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                                    }`
-                                }
-                            >
-                                {item.icon}
-                                <span>{item.name}</span>
-                            </NavLink>
-                        );
-                    })}
-                </nav>
+                <div className="p-4 border-t border-border space-y-1 shrink-0 bg-card/50">
+                    {bottomNavItems.map(renderNavItem)}
+                </div>
             </aside>
 
             {/* Main Content */}
@@ -159,6 +190,18 @@ const Layout = () => {
                     </button>
 
                     <div className="flex items-center gap-4 ml-auto">
+                        <OrganizationSwitcher 
+                            hidePersonal={false}
+                            appearance={{
+                                elements: {
+                                    rootBox: "flex justify-center flex-col",
+                                    organizationSwitcherTrigger: "bg-card border border-border px-3 py-1.5 rounded-xl text-slate-200 hover:bg-slate-800 transition-colors",
+                                    organizationPreviewTextContainer: "text-slate-200",
+                                    organizationPreviewMainIdentifier: "font-semibold",
+                                }
+                            }}
+                        />
+
                         <div className="flex items-center gap-2 bg-card pl-4 pr-1 py-1 rounded-full border border-border cursor-pointer hover:bg-slate-800 transition-colors">
                             <span className="font-medium text-sm hidden sm:block">{user?.fullName || user?.primaryEmailAddress?.emailAddress}</span>
                             <UserButton />

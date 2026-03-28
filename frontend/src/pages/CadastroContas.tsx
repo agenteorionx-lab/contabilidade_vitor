@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useStore } from '../store/useStore';
+import { useStore, useActiveData } from '../store/useStore';
 import { Plus, Edit2, Trash2, Landmark, Wallet, Check } from 'lucide-react';
+import { useOrganization } from '@clerk/clerk-react';
 import type { ContaBancaria } from '../types';
 
 const generateId = () => {
@@ -15,7 +16,7 @@ const formatCurrency = (val: number) => {
 };
 
 const CadastroContas = () => {
-    const { config, setConfig, cascadeAgenciaGlobal, lancamentos } = useStore();
+    const { config, setConfig, cascadeAgenciaGlobal, lancamentos } = useActiveData();
     const contas = config.contas || [];
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -28,6 +29,11 @@ const CadastroContas = () => {
     const [carteira, setCarteira] = useState('Conta PF');
     const [cor, setCor] = useState('#3b82f6'); // blue default
     const [incluirSoma, setIncluirSoma] = useState(true);
+
+    const { organization, membership } = useOrganization();
+    const isAdmin = !organization || membership?.role === 'org:admin';
+
+    if (!isAdmin) return <div className="p-8 text-center text-slate-400">Acesso Restrito (Admin Apenas)</div>;
 
     const presetColors = ['#0ea5e9', '#8b5cf6', '#84cc16', '#f59e0b', '#ef4444', '#14b8a6', '#64748b'];
 
