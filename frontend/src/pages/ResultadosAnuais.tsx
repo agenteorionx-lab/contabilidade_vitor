@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useStore, useActiveData } from '../store/useStore';
+import { useActiveData } from '../store/useStore';
 import { getAnnualSummary } from '../utils/financeCalculations';
 import type { TipoOrigin } from '../types';
 import { Calendar, ChevronLeft, ChevronRight, ArrowUpCircle, ArrowDownCircle, Wallet, TrendingUp, Activity, BarChart3 } from 'lucide-react';

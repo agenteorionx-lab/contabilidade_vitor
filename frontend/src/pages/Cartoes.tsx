@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useStore, useActiveData } from '../store/useStore';
-import { CreditCard, Calendar as CalendarIcon, WalletCards, Plus, Layers, Tag as TagIcon, Trash2, Pencil } from 'lucide-react';
+import { useActiveData } from '../store/useStore';
+import { CreditCard, Calendar as CalendarIcon, WalletCards, Plus, Tag as TagIcon, Trash2, Pencil } from 'lucide-react';
 import { format, parseISO, getMonth, getYear, addMonths } from 'date-fns';
 import type { Lancamento, TipoOrigin, TipoTransacao } from '../types';
 
@@ -153,9 +153,6 @@ const Cartoes = () => {
         }
     }, [tipo, config]);
 
-    const toggleTag = (id: string) => {
-        setTagsIds(prev => prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]);
-    };
 
     const handleEdit = (l: Lancamento) => {
         setEditingId(l.id);

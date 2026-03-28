@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useStore, useActiveData } from '../store/useStore';
+import { useActiveData } from '../store/useStore';
 import type { Divida } from '../types';
 import { Plus, ReceiptEuro, WalletCards, CheckCircle2, CircleDashed, Trash2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';

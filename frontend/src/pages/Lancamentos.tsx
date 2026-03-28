@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useStore, useActiveData } from '../store/useStore';
+import { useActiveData } from '../store/useStore';
 import type { Lancamento, TipoOrigin, TipoTransacao } from '../types';
 import { Plus, Search, Trash2, Pencil, ArrowUpCircle, ArrowDownCircle, Layers, Tag as TagIcon } from 'lucide-react';
 import { format, parseISO, addMonths } from 'date-fns';

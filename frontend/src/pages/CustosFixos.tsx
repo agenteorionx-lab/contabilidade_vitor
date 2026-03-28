@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useStore, useActiveData } from '../store/useStore';
+import { useActiveData } from '../store/useStore';
 import type { CustoFixo, Lancamento, TipoOrigin } from '../types';
 import { useOrganization } from '@clerk/clerk-react';
 import { Plus, CheckCircle2, CircleDashed, CalendarDays, Trash2, Home, Activity } from 'lucide-react';

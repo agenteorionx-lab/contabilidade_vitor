@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useStore, useActiveData } from '../store/useStore';
+import { useActiveData } from '../store/useStore';
 import { Plus, Edit2, Trash2, CreditCard, Calendar, Check } from 'lucide-react';
 import { useOrganization } from '@clerk/clerk-react';
 import type { CartaoCredito } from '../types';
